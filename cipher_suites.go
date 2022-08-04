@@ -10,16 +10,15 @@ import (
 	"crypto/cipher"
 	"crypto/des"
 	"crypto/hmac"
-	"crypto/internal/boring"
 	"crypto/rc4"
 	"crypto/sha1"
 	"crypto/sha256"
 	"fmt"
 	"hash"
-	"internal/cpu"
 	"runtime"
 
 	"golang.org/x/crypto/chacha20poly1305"
+	"golang.org/x/sys/cpu"
 )
 
 // CipherSuite is a TLS cipher suite. Note that most functions in this package
@@ -377,13 +376,13 @@ var aesgcmCiphers = map[uint16]bool{
 	TLS_AES_256_GCM_SHA384: true,
 }
 
-var nonAESGCMAEADCiphers = map[uint16]bool{
-	// TLS 1.2
-	TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305:   true,
-	TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305: true,
-	// TLS 1.3
-	TLS_CHACHA20_POLY1305_SHA256: true,
-}
+// var nonAESGCMAEADCiphers = map[uint16]bool{
+// 	// TLS 1.2
+// 	TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305:   true,
+// 	TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305: true,
+// 	// TLS 1.3
+// 	TLS_CHACHA20_POLY1305_SHA256: true,
+// }
 
 // aesgcmPreferred returns whether the first known cipher in the preference list
 // is an AES-GCM cipher, implying the peer has hardware support for it.
@@ -425,9 +424,9 @@ func macSHA1(key []byte) hash.Hash {
 	h := sha1.New
 	// The BoringCrypto SHA1 does not have a constant-time
 	// checksum function, so don't try to use it.
-	if !boring.Enabled {
-		h = newConstantTimeHash(h)
-	}
+	// if !boring.Enabled {
+	// 	h = newConstantTimeHash(h)
+	// }
 	return hmac.New(h, key)
 }
 
@@ -517,12 +516,13 @@ func aeadAESGCM(key, noncePrefix []byte) aead {
 		panic(err)
 	}
 	var aead cipher.AEAD
-	if boring.Enabled {
-		aead, err = boring.NewGCMTLS(aes)
-	} else {
-		boring.Unreachable()
-		aead, err = cipher.NewGCM(aes)
-	}
+	// if boring.Enabled {
+	// 	aead, err = boring.NewGCMTLS(aes)
+	// } else {
+	// 	boring.Unreachable()
+	// 	aead, err = cipher.NewGCM(aes)
+	// }
+	aead, err = cipher.NewGCM(aes)
 	if err != nil {
 		panic(err)
 	}
@@ -564,29 +564,29 @@ func aeadChaCha20Poly1305(key, nonceMask []byte) aead {
 	return ret
 }
 
-type constantTimeHash interface {
-	hash.Hash
-	ConstantTimeSum(b []byte) []byte
-}
+// type constantTimeHash interface {
+// 	hash.Hash
+// 	ConstantTimeSum(b []byte) []byte
+// }
 
 // cthWrapper wraps any hash.Hash that implements ConstantTimeSum, and replaces
 // with that all calls to Sum. It's used to obtain a ConstantTimeSum-based HMAC.
-type cthWrapper struct {
-	h constantTimeHash
-}
+// type cthWrapper struct {
+// 	h constantTimeHash
+// }
 
-func (c *cthWrapper) Size() int                   { return c.h.Size() }
-func (c *cthWrapper) BlockSize() int              { return c.h.BlockSize() }
-func (c *cthWrapper) Reset()                      { c.h.Reset() }
-func (c *cthWrapper) Write(p []byte) (int, error) { return c.h.Write(p) }
-func (c *cthWrapper) Sum(b []byte) []byte         { return c.h.ConstantTimeSum(b) }
+// func (c *cthWrapper) Size() int                   { return c.h.Size() }
+// func (c *cthWrapper) BlockSize() int              { return c.h.BlockSize() }
+// func (c *cthWrapper) Reset()                      { c.h.Reset() }
+// func (c *cthWrapper) Write(p []byte) (int, error) { return c.h.Write(p) }
+// func (c *cthWrapper) Sum(b []byte) []byte         { return c.h.ConstantTimeSum(b) }
 
-func newConstantTimeHash(h func() hash.Hash) func() hash.Hash {
-	boring.Unreachable()
-	return func() hash.Hash {
-		return &cthWrapper{h().(constantTimeHash)}
-	}
-}
+// func newConstantTimeHash(h func() hash.Hash) func() hash.Hash {
+// 	// boring.Unreachable()
+// 	return func() hash.Hash {
+// 		return &cthWrapper{h().(constantTimeHash)}
+// 	}
+// }
 
 // tls10MAC implements the TLS 1.0 MAC function. RFC 2246, Section 6.2.3.
 func tls10MAC(h hash.Hash, out, seq, header, data, extra []byte) []byte {

@@ -984,7 +984,8 @@ const roleServer = false
 func (c *Config) supportedVersions(isClient bool) []uint16 {
 	versions := make([]uint16, 0, len(supportedVersions))
 	for _, v := range supportedVersions {
-		if needFIPS() && (v < fipsMinVersion(c) || v > fipsMaxVersion(c)) {
+		// if needFIPS() && (v < fipsMinVersion(c) || v > fipsMaxVersion(c)) {
+		if needFIPS() && (v < fipsMinVersion(c)) {
 			continue
 		}
 		if (c == nil || c.MinVersion == 0) &&
