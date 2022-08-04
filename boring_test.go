@@ -4,7 +4,7 @@
 
 //go:build boringcrypto
 
-package tls
+package etls
 
 import (
 	"crypto/ecdsa"
