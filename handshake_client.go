@@ -669,6 +669,9 @@ func (hs *clientHandshakeState) handshake() error {
 	return nil
 }
 
+// fakeHandshake() is similar to handshake() except is does not attempt to complete
+// the entire TLS handshake process.  This is used for the purpose of evaluating the
+// serverHello for cipher support
 func (hs *clientHandshakeState) fakeHandshake() error {
 	// c := hs.c
 
@@ -676,72 +679,6 @@ func (hs *clientHandshakeState) fakeHandshake() error {
 	if err != nil {
 		return err
 	}
-
-	// hs.finishedHash = newFinishedHash(c.vers, hs.suite)
-
-	// // No signatures of the handshake are needed in a resumption.
-	// // Otherwise, in a full handshake, if we don't have any certificates
-	// // configured then we will never send a CertificateVerify message and
-	// // thus no signatures are needed in that case either.
-	// if isResume || (len(c.config.Certificates) == 0 && c.config.GetClientCertificate == nil) {
-	// 	hs.finishedHash.discardHandshakeBuffer()
-	// }
-
-	// hs.finishedHash.Write(hs.hello.marshal())
-	// hs.finishedHash.Write(hs.serverHello.marshal())
-
-	// c.buffering = true
-	// c.didResume = isResume
-	// if isResume {
-	// 	if err := hs.establishKeys(); err != nil {
-	// 		return err
-	// 	}
-	// 	if err := hs.readSessionTicket(); err != nil {
-	// 		return err
-	// 	}
-	// 	if err := hs.readFinished(c.serverFinished[:]); err != nil {
-	// 		return err
-	// 	}
-	// 	c.clientFinishedIsFirst = false
-	// 	// Make sure the connection is still being verified whether or not this
-	// 	// is a resumption. Resumptions currently don't reverify certificates so
-	// 	// they don't call verifyServerCertificate. See Issue 31641.
-	// 	if c.config.VerifyConnection != nil {
-	// 		if err := c.config.VerifyConnection(c.connectionStateLocked()); err != nil {
-	// 			c.sendAlert(alertBadCertificate)
-	// 			return err
-	// 		}
-	// 	}
-	// 	if err := hs.sendFinished(c.clientFinished[:]); err != nil {
-	// 		return err
-	// 	}
-	// 	if _, err := c.flush(); err != nil {
-	// 		return err
-	// 	}
-	// } else {
-	// 	if err := hs.doFullHandshake(); err != nil {
-	// 		return err
-	// 	}
-	// 	if err := hs.establishKeys(); err != nil {
-	// 		return err
-	// 	}
-	// 	if err := hs.sendFinished(c.clientFinished[:]); err != nil {
-	// 		return err
-	// 	}
-	// 	if _, err := c.flush(); err != nil {
-	// 		return err
-	// 	}
-	// 	c.clientFinishedIsFirst = true
-	// 	if err := hs.readSessionTicket(); err != nil {
-	// 		return err
-	// 	}
-	// 	if err := hs.readFinished(c.serverFinished[:]); err != nil {
-	// 		return err
-	// 	}
-	// }
-
-	// c.ekm = ekmFromMasterSecret(c.vers, hs.suite, hs.masterSecret, hs.hello.random, hs.serverHello.random)
-	// atomic.StoreUint32(&c.handshakeStatus, 1)
 
 	return nil
 }
