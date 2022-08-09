@@ -1610,3 +1610,30 @@ func TestPKCS1OnlyCert(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestFakeClient(t *testing.T) {
+	var server = "google:443"
+
+	tlsCfg := Config{
+		ServerName: "www.google.com",
+		// InsecureSkipVerify: true,
+		// CipherSuites:       []uint16{TLS_RSA_WITH_DES_CBC_SHA},
+		// MinVersion:         uint16(VersionTLS11),
+		// MaxVersion:         uint16(VersionTLS12),
+	}
+
+	conn, err := net.DialTimeout("tcp", server, 3*time.Second)
+	if err != nil {
+		t.Error(err)
+	}
+	defer conn.Close()
+
+	client := FakeClient(conn, &tlsCfg)
+
+	client.FakeHandshake()
+
+	if client.handshakeErr != nil {
+		t.Error(client.handshakeErr)
+	}
+
+}

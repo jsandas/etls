@@ -1389,6 +1389,10 @@ func (c *Conn) Handshake() error {
 	return c.HandshakeContext(context.Background())
 }
 
+func (c *Conn) FakeHandshake() error {
+	return c.FakeHandshakeContext(context.Background())
+}
+
 // HandshakeContext runs the client or server handshake
 // protocol if it has not yet been run.
 //
@@ -1403,6 +1407,12 @@ func (c *Conn) HandshakeContext(ctx context.Context) error {
 	// Delegate to unexported method for named return
 	// without confusing documented signature.
 	return c.handshakeContext(ctx)
+}
+
+func (c *Conn) FakeHandshakeContext(ctx context.Context) error {
+	// Delegate to unexported method for named return
+	// without confusing documented signature.
+	return c.fakeHandshakeContext(ctx)
 }
 
 func (c *Conn) handshakeContext(ctx context.Context) (ret error) {
@@ -1474,6 +1484,79 @@ func (c *Conn) handshakeContext(ctx context.Context) (ret error) {
 	if c.handshakeErr != nil && c.handshakeComplete() {
 		panic("tls: internal error: handshake returned an error but is marked successful")
 	}
+
+	return c.handshakeErr
+}
+
+func (c *Conn) fakeHandshakeContext(ctx context.Context) (ret error) {
+	// Fast sync/atomic-based exit if there is no handshake in flight and the
+	// last one succeeded without an error. Avoids the expensive context setup
+	// and mutex for most Read and Write calls.
+	if c.handshakeComplete() {
+		return nil
+	}
+
+	handshakeCtx, cancel := context.WithCancel(ctx)
+	// Note: defer this before starting the "interrupter" goroutine
+	// so that we can tell the difference between the input being canceled and
+	// this cancellation. In the former case, we need to close the connection.
+	defer cancel()
+
+	// Start the "interrupter" goroutine, if this context might be canceled.
+	// (The background context cannot).
+	//
+	// The interrupter goroutine waits for the input context to be done and
+	// closes the connection if this happens before the function returns.
+	if ctx.Done() != nil {
+		done := make(chan struct{})
+		interruptRes := make(chan error, 1)
+		defer func() {
+			close(done)
+			if ctxErr := <-interruptRes; ctxErr != nil {
+				// Return context error to user.
+				ret = ctxErr
+			}
+		}()
+		go func() {
+			select {
+			case <-handshakeCtx.Done():
+				// Close the connection, discarding the error
+				_ = c.conn.Close()
+				interruptRes <- handshakeCtx.Err()
+			case <-done:
+				interruptRes <- nil
+			}
+		}()
+	}
+
+	c.handshakeMutex.Lock()
+	defer c.handshakeMutex.Unlock()
+
+	if err := c.handshakeErr; err != nil {
+		return err
+	}
+	if c.handshakeComplete() {
+		return nil
+	}
+
+	c.in.Lock()
+	defer c.in.Unlock()
+
+	c.handshakeErr = c.handshakeFn(handshakeCtx)
+	if c.handshakeErr == nil {
+		c.handshakes++
+	} else {
+		// If an error occurred during the handshake try to flush the
+		// alert that might be left in the buffer.
+		c.flush()
+	}
+
+	// if c.handshakeErr == nil && !c.handshakeComplete() {
+	// 	c.handshakeErr = errors.New("tls: internal error: handshake should have had a result")
+	// }
+	// if c.handshakeErr != nil && c.handshakeComplete() {
+	// 	panic("tls: internal error: handshake returned an error but is marked successful")
+	// }
 
 	return c.handshakeErr
 }

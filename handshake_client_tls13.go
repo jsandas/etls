@@ -109,6 +109,77 @@ func (hs *clientHandshakeStateTLS13) handshake() error {
 	return nil
 }
 
+func (hs *clientHandshakeStateTLS13) fakeHandshake() error {
+	c := hs.c
+
+	if needFIPS() {
+		return errors.New("tls: internal error: TLS 1.3 reached in FIPS mode")
+	}
+
+	// The server must not select TLS 1.3 in a renegotiation. See RFC 8446,
+	// sections 4.1.2 and 4.1.3.
+	if c.handshakes > 0 {
+		c.sendAlert(alertProtocolVersion)
+		return errors.New("tls: server selected TLS 1.3 in a renegotiation")
+	}
+
+	// Consistency check on the presence of a keyShare and its parameters.
+	if hs.ecdheParams == nil || len(hs.hello.keyShares) != 1 {
+		return c.sendAlert(alertInternalError)
+	}
+
+	if err := hs.checkServerHelloOrHRR(); err != nil {
+		return err
+	}
+
+	hs.transcript = hs.suite.hash.New()
+	hs.transcript.Write(hs.hello.marshal())
+
+	if bytes.Equal(hs.serverHello.random, helloRetryRequestRandom) {
+		if err := hs.sendDummyChangeCipherSpec(); err != nil {
+			return err
+		}
+		if err := hs.processHelloRetryRequest(); err != nil {
+			return err
+		}
+	}
+
+	hs.transcript.Write(hs.serverHello.marshal())
+
+	c.buffering = true
+	if err := hs.processServerHello(); err != nil {
+		return err
+	}
+	// if err := hs.sendDummyChangeCipherSpec(); err != nil {
+	// 	return err
+	// }
+	// if err := hs.establishHandshakeKeys(); err != nil {
+	// 	return err
+	// }
+	// if err := hs.readServerParameters(); err != nil {
+	// 	return err
+	// }
+	// if err := hs.readServerCertificate(); err != nil {
+	// 	return err
+	// }
+	// if err := hs.readServerFinished(); err != nil {
+	// 	return err
+	// }
+	// if err := hs.sendClientCertificate(); err != nil {
+	// 	return err
+	// }
+	// if err := hs.sendClientFinished(); err != nil {
+	// 	return err
+	// }
+	// if _, err := c.flush(); err != nil {
+	// 	return err
+	// }
+
+	// atomic.StoreUint32(&c.handshakeStatus, 1)
+
+	return nil
+}
+
 // checkServerHelloOrHRR does validity checks that apply to both ServerHello and
 // HelloRetryRequest messages. It sets hs.suite.
 func (hs *clientHandshakeStateTLS13) checkServerHelloOrHRR() error {
