@@ -974,6 +974,7 @@ var supportedVersions = []uint16{
 	VersionTLS12,
 	VersionTLS11,
 	VersionTLS10,
+	VersionSSL30,
 }
 
 // roleClient and roleServer are meant to call supportedVersions and parents
@@ -985,9 +986,9 @@ func (c *Config) supportedVersions(isClient bool) []uint16 {
 	versions := make([]uint16, 0, len(supportedVersions))
 	for _, v := range supportedVersions {
 		// if needFIPS() && (v < fipsMinVersion(c) || v > fipsMaxVersion(c)) {
-		if needFIPS() && (v < fipsMinVersion(c)) {
-			continue
-		}
+		// if needFIPS() && (v < fipsMinVersion(c)) {
+		// 	continue
+		// }
 		if (c == nil || c.MinVersion == 0) &&
 			isClient && v < VersionTLS12 {
 			continue
