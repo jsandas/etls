@@ -36,6 +36,117 @@ type clientHandshakeState struct {
 
 var testingOnlyForceClientHelloSignatureAlgorithms []SignatureScheme
 
+func (c *Conn) makeFakeClientHello() (*clientHelloMsg, ecdheParameters, error) {
+	config := c.config
+	if len(config.ServerName) == 0 && !config.InsecureSkipVerify {
+		return nil, nil, errors.New("tls: either ServerName or InsecureSkipVerify must be specified in the tls.Config")
+	}
+
+	nextProtosLength := 0
+	for _, proto := range config.NextProtos {
+		if l := len(proto); l == 0 || l > 255 {
+			return nil, nil, errors.New("tls: invalid NextProtos value")
+		} else {
+			nextProtosLength += 1 + l
+		}
+	}
+	if nextProtosLength > 0xffff {
+		return nil, nil, errors.New("tls: NextProtos values too large")
+	}
+
+	supportedVersions := config.supportedVersions(roleClient)
+	if len(supportedVersions) == 0 {
+		return nil, nil, errors.New("tls: no supported versions satisfy MinVersion and MaxVersion")
+	}
+
+	clientHelloVersion := config.maxSupportedVersion(roleClient)
+	// The version at the beginning of the ClientHello was capped at TLS 1.2
+	// for compatibility reasons. The supported_versions extension is used
+	// to negotiate versions now. See RFC 8446, Section 4.2.1.
+	if clientHelloVersion > VersionTLS12 {
+		clientHelloVersion = VersionTLS12
+	}
+
+	hello := &clientHelloMsg{
+		vers:                         clientHelloVersion,
+		compressionMethods:           []uint8{compressionNone},
+		random:                       make([]byte, 32),
+		sessionId:                    make([]byte, 32),
+		ocspStapling:                 true,
+		scts:                         true,
+		serverName:                   hostnameInSNI(config.ServerName),
+		supportedCurves:              config.curvePreferences(),
+		supportedPoints:              []uint8{pointFormatUncompressed},
+		secureRenegotiationSupported: true,
+		alpnProtocols:                config.NextProtos,
+		supportedVersions:            supportedVersions,
+	}
+
+	if c.handshakes > 0 {
+		hello.secureRenegotiation = c.clientFinished[:]
+	}
+
+	// preferenceOrder := cipherSuitesPreferenceOrder
+	// if !hasAESGCMHardwareSupport {
+	// 	preferenceOrder = cipherSuitesPreferenceOrderNoAES
+	// }
+	configCipherSuites := config.cipherSuites()
+	hello.cipherSuites = make([]uint16, 0, len(configCipherSuites))
+
+	for _, suiteId := range configCipherSuites {
+		suite := mutualCipherSuite(configCipherSuites, suiteId)
+		if suite == nil {
+			continue
+		}
+		// Don't advertise TLS 1.2-only cipher suites unless
+		// we're attempting TLS 1.2.
+		if hello.vers < VersionTLS12 && suite.flags&suiteTLS12 != 0 {
+			continue
+		}
+		hello.cipherSuites = append(hello.cipherSuites, suiteId)
+	}
+
+	_, err := io.ReadFull(config.rand(), hello.random)
+	if err != nil {
+		return nil, nil, errors.New("tls: short read from Rand: " + err.Error())
+	}
+
+	// A random session ID is used to detect when the server accepted a ticket
+	// and is resuming a session (see RFC 5077). In TLS 1.3, it's always set as
+	// a compatibility measure (see RFC 8446, Section 4.1.2).
+	if _, err := io.ReadFull(config.rand(), hello.sessionId); err != nil {
+		return nil, nil, errors.New("tls: short read from Rand: " + err.Error())
+	}
+
+	if hello.vers >= VersionTLS12 {
+		hello.supportedSignatureAlgorithms = supportedSignatureAlgorithms()
+	}
+	if testingOnlyForceClientHelloSignatureAlgorithms != nil {
+		hello.supportedSignatureAlgorithms = testingOnlyForceClientHelloSignatureAlgorithms
+	}
+
+	var params ecdheParameters
+	if hello.supportedVersions[0] == VersionTLS13 {
+		if hasAESGCMHardwareSupport {
+			hello.cipherSuites = append(hello.cipherSuites, defaultCipherSuitesTLS13...)
+		} else {
+			hello.cipherSuites = append(hello.cipherSuites, defaultCipherSuitesTLS13NoAES...)
+		}
+
+		curveID := config.curvePreferences()[0]
+		if _, ok := curveForCurveID(curveID); curveID != X25519 && !ok {
+			return nil, nil, errors.New("tls: CurvePreferences includes unsupported curve")
+		}
+		params, err = generateECDHEParameters(config.rand(), curveID)
+		if err != nil {
+			return nil, nil, err
+		}
+		hello.keyShares = []keyShare{{group: curveID, data: params.PublicKey()}}
+	}
+
+	return hello, params, nil
+}
+
 func (c *Conn) makeClientHello() (*clientHelloMsg, ecdheParameters, error) {
 	config := c.config
 	if len(config.ServerName) == 0 && !config.InsecureSkipVerify {
@@ -233,6 +344,104 @@ func (c *Conn) clientHandshake(ctx context.Context) (err error) {
 	}
 
 	if err := hs.handshake(); err != nil {
+		return err
+	}
+
+	// If we had a successful handshake and hs.session is different from
+	// the one already cached - cache a new one.
+	if cacheKey != "" && hs.session != nil && session != hs.session {
+		c.config.ClientSessionCache.Put(cacheKey, hs.session)
+	}
+
+	return nil
+}
+
+func (c *Conn) fakeClientHandshake(ctx context.Context) (err error) {
+	if c.config == nil {
+		c.config = defaultConfig()
+	}
+
+	// This may be a renegotiation handshake, in which case some fields
+	// need to be reset.
+	c.didResume = false
+
+	hello, ecdheParams, err := c.makeFakeClientHello()
+	if err != nil {
+		return err
+	}
+	c.serverName = hello.serverName
+
+	cacheKey, session, earlySecret, binderKey := c.loadSession(hello)
+	if cacheKey != "" && session != nil {
+		defer func() {
+			// If we got a handshake failure when resuming a session, throw away
+			// the session ticket. See RFC 5077, Section 3.2.
+			//
+			// RFC 8446 makes no mention of dropping tickets on failure, but it
+			// does require servers to abort on invalid binders, so we need to
+			// delete tickets to recover from a corrupted PSK.
+			if err != nil {
+				c.config.ClientSessionCache.Put(cacheKey, nil)
+			}
+		}()
+	}
+
+	if _, err := c.writeRecord(recordTypeHandshake, hello.marshal()); err != nil {
+		return err
+	}
+
+	msg, err := c.readHandshake()
+	if err != nil {
+		return err
+	}
+
+	serverHello, ok := msg.(*serverHelloMsg)
+	if !ok {
+		c.sendAlert(alertUnexpectedMessage)
+		return unexpectedMessageError(serverHello, msg)
+	}
+
+	if err := c.pickTLSVersion(serverHello); err != nil {
+		return err
+	}
+
+	// If we are negotiating a protocol version that's lower than what we
+	// support, check for the server downgrade canaries.
+	// See RFC 8446, Section 4.1.3.
+	maxVers := c.config.maxSupportedVersion(roleClient)
+	tls12Downgrade := string(serverHello.random[24:]) == downgradeCanaryTLS12
+	tls11Downgrade := string(serverHello.random[24:]) == downgradeCanaryTLS11
+	if maxVers == VersionTLS13 && c.vers <= VersionTLS12 && (tls12Downgrade || tls11Downgrade) ||
+		maxVers == VersionTLS12 && c.vers <= VersionTLS11 && tls11Downgrade {
+		c.sendAlert(alertIllegalParameter)
+		return errors.New("tls: downgrade attempt detected, possibly due to a MitM attack or a broken middlebox")
+	}
+
+	if c.vers == VersionTLS13 {
+		hs := &clientHandshakeStateTLS13{
+			c:           c,
+			ctx:         ctx,
+			serverHello: serverHello,
+			hello:       hello,
+			ecdheParams: ecdheParams,
+			session:     session,
+			earlySecret: earlySecret,
+			binderKey:   binderKey,
+		}
+
+		// In TLS 1.3, session tickets are delivered after the handshake.
+		return hs.fakeHandshake()
+	}
+
+	hs := &clientHandshakeState{
+		c:           c,
+		ctx:         ctx,
+		serverHello: serverHello,
+		hello:       hello,
+		session:     session,
+	}
+
+	if err := hs.fakeHandshake(); err != nil {
 		return err
 	}
 
@@ -456,6 +665,83 @@ func (hs *clientHandshakeState) handshake() error {
 
 	c.ekm = ekmFromMasterSecret(c.vers, hs.suite, hs.masterSecret, hs.hello.random, hs.serverHello.random)
 	atomic.StoreUint32(&c.handshakeStatus, 1)
+
+	return nil
+}
+
+func (hs *clientHandshakeState) fakeHandshake() error {
+	// c := hs.c
+
+	_, err := hs.processServerHello()
+	if err != nil {
+		return err
+	}
+
+	// hs.finishedHash = newFinishedHash(c.vers, hs.suite)
+
+	// // No signatures of the handshake are needed in a resumption.
+	// // Otherwise, in a full handshake, if we don't have any certificates
+	// // configured then we will never send a CertificateVerify message and
+	// // thus no signatures are needed in that case either.
+	// if isResume || (len(c.config.Certificates) == 0 && c.config.GetClientCertificate == nil) {
+	// 	hs.finishedHash.discardHandshakeBuffer()
+	// }
+
+	// hs.finishedHash.Write(hs.hello.marshal())
+	// hs.finishedHash.Write(hs.serverHello.marshal())
+
+	// c.buffering = true
+	// c.didResume = isResume
+	// if isResume {
+	// 	if err := hs.establishKeys(); err != nil {
+	// 		return err
+	// 	}
+	// 	if err := hs.readSessionTicket(); err != nil {
+	// 		return err
+	// 	}
+	// 	if err := hs.readFinished(c.serverFinished[:]); err != nil {
+	// 		return err
+	// 	}
+	// 	c.clientFinishedIsFirst = false
+	// 	// Make sure the connection is still being verified whether or not this
+	// 	// is a resumption. Resumptions currently don't reverify certificates so
+	// 	// they don't call verifyServerCertificate. See Issue 31641.
+	// 	if c.config.VerifyConnection != nil {
+	// 		if err := c.config.VerifyConnection(c.connectionStateLocked()); err != nil {
+	// 			c.sendAlert(alertBadCertificate)
+	// 			return err
+	// 		}
+	// 	}
+	// 	if err := hs.sendFinished(c.clientFinished[:]); err != nil {
+	// 		return err
+	// 	}
+	// 	if _, err := c.flush(); err != nil {
+	// 		return err
+	// 	}
+	// } else {
+	// 	if err := hs.doFullHandshake(); err != nil {
+	// 		return err
+	// 	}
+	// 	if err := hs.establishKeys(); err != nil {
+	// 		return err
+	// 	}
+	// 	if err := hs.sendFinished(c.clientFinished[:]); err != nil {
+	// 		return err
+	// 	}
+	// 	if _, err := c.flush(); err != nil {
+	// 		return err
+	// 	}
+	// 	c.clientFinishedIsFirst = true
+	// 	if err := hs.readSessionTicket(); err != nil {
+	// 		return err
+	// 	}
+	// 	if err := hs.readFinished(c.serverFinished[:]); err != nil {
+	// 		return err
+	// 	}
+	// }
+
+	// c.ekm = ekmFromMasterSecret(c.vers, hs.suite, hs.masterSecret, hs.hello.random, hs.serverHello.random)
+	// atomic.StoreUint32(&c.handshakeStatus, 1)
 
 	return nil
 }

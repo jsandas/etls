@@ -54,6 +54,17 @@ func Client(conn net.Conn, config *Config) *Conn {
 	return c
 }
 
+func FakeClient(conn net.Conn, config *Config) *Conn {
+	c := &Conn{
+		conn:     conn,
+		config:   config,
+		isClient: true,
+	}
+	c.handshakeFn = c.fakeClientHandshake
+
+	return c
+}
+
 // A listener implements a network listener (net.Listener) for TLS connections.
 type listener struct {
 	net.Listener
