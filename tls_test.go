@@ -1633,7 +1633,6 @@ func TestFakeClient(t *testing.T) {
 	tlsCfg := Config{
 		ServerName:         "www.google.com",
 		InsecureSkipVerify: true,
-		CipherSuites:       []uint16{TLS_RSA_WITH_DES_CBC_SHA},
 		MinVersion:         uint16(VersionTLS12),
 		MaxVersion:         uint16(VersionTLS12),
 	}
@@ -1649,7 +1648,47 @@ func TestFakeClient(t *testing.T) {
 	client.FakeHandshake()
 
 	if client.handshakeErr != nil {
-		t.Error(client.handshakeErr)
+		t.Errorf("wrong result, got: %d, expected no error.", client.handshakeErr)
+	}
+}
+
+func TestFakeClientBadCipher(t *testing.T) {
+	// Start a local HTTPS server
+	s := httptest.NewTLSServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		// Test request parameters
+		if req.URL.String() == "/" {
+			// Send response to be tested
+			rw.Header().Set("Server", "Apache")
+			rw.Write([]byte("Hello"))
+		}
+	}))
+	// Close the server when test finishes
+	defer s.Close()
+
+	server := strings.Replace(s.URL, "https://", "", -1)
+
+	// var server = "google.com:443"
+
+	tlsCfg := Config{
+		ServerName:         "www.google.com",
+		InsecureSkipVerify: true,
+		CipherSuites:       []uint16{TLS_RSA_WITH_DES_CBC_SHA},
+		MinVersion:         uint16(VersionTLS12),
+		MaxVersion:         uint16(VersionTLS12),
+	}
+
+	conn, err := net.DialTimeout("tcp", server, 3*time.Second)
+	if err != nil {
+		t.Error(err)
+	}
+	defer conn.Close()
+
+	client := FakeClient(conn, &tlsCfg)
+
+	client.FakeHandshake()
+
+	if client.handshakeErr == nil {
+		t.Errorf("wrong result, got: %d, expected an error.", client.handshakeErr)
 	}
 }
 
@@ -1669,7 +1708,7 @@ func TestFakeClientTLS13(t *testing.T) {
 	server := strings.Replace(s.URL, "https://", "", -1)
 
 	tlsCfg := Config{
-		ServerName:         "www.google.com",
+		ServerName:         "test.com",
 		InsecureSkipVerify: true,
 		MinVersion:         uint16(VersionTLS13),
 		MaxVersion:         uint16(VersionTLS13),
@@ -1686,6 +1725,6 @@ func TestFakeClientTLS13(t *testing.T) {
 	client.FakeHandshake()
 
 	if client.handshakeErr != nil {
-		t.Error(client.handshakeErr)
+		t.Errorf("wrong result, got: %d, expected no errors.", client.handshakeErr)
 	}
 }
