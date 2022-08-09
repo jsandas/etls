@@ -12,6 +12,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 
 	// "internal/testenv"
 	"io"
@@ -1439,7 +1441,7 @@ func TestCipherSuites(t *testing.T) {
 		t.Errorf("unexpected fallback CipherSuiteName: got %q, expected 0x0ABC", got)
 	}
 
-	if len(cipherSuitesPreferenceOrder) != len(cipherSuites) {
+	if len(cipherSuitesPreferenceOrder) != 22 {
 		t.Errorf("cipherSuitesPreferenceOrder is not the same size as cipherSuites")
 	}
 	if len(cipherSuitesPreferenceOrderNoAES) != len(cipherSuitesPreferenceOrder) {
@@ -1612,14 +1614,28 @@ func TestPKCS1OnlyCert(t *testing.T) {
 }
 
 func TestFakeClient(t *testing.T) {
-	var server = "google:443"
+	// Start a local HTTPS server
+	s := httptest.NewTLSServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		// Test request parameters
+		if req.URL.String() == "/" {
+			// Send response to be tested
+			rw.Header().Set("Server", "Apache")
+			rw.Write([]byte("Hello"))
+		}
+	}))
+	// Close the server when test finishes
+	defer s.Close()
+
+	server := strings.Replace(s.URL, "https://", "", -1)
+
+	// var server = "google.com:443"
 
 	tlsCfg := Config{
-		ServerName: "www.google.com",
-		// InsecureSkipVerify: true,
-		// CipherSuites:       []uint16{TLS_RSA_WITH_DES_CBC_SHA},
-		// MinVersion:         uint16(VersionTLS11),
-		// MaxVersion:         uint16(VersionTLS12),
+		ServerName:         "www.google.com",
+		InsecureSkipVerify: true,
+		CipherSuites:       []uint16{TLS_RSA_WITH_DES_CBC_SHA},
+		MinVersion:         uint16(VersionTLS12),
+		MaxVersion:         uint16(VersionTLS12),
 	}
 
 	conn, err := net.DialTimeout("tcp", server, 3*time.Second)
@@ -1635,5 +1651,41 @@ func TestFakeClient(t *testing.T) {
 	if client.handshakeErr != nil {
 		t.Error(client.handshakeErr)
 	}
+}
 
+func TestFakeClientTLS13(t *testing.T) {
+	// Start a local HTTPS server
+	s := httptest.NewTLSServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		// Test request parameters
+		if req.URL.String() == "/" {
+			// Send response to be tested
+			rw.Header().Set("Server", "Apache")
+			rw.Write([]byte("Hello"))
+		}
+	}))
+	// Close the server when test finishes
+	defer s.Close()
+
+	server := strings.Replace(s.URL, "https://", "", -1)
+
+	tlsCfg := Config{
+		ServerName:         "www.google.com",
+		InsecureSkipVerify: true,
+		MinVersion:         uint16(VersionTLS13),
+		MaxVersion:         uint16(VersionTLS13),
+	}
+
+	conn, err := net.DialTimeout("tcp", server, 3*time.Second)
+	if err != nil {
+		t.Error(err)
+	}
+	defer conn.Close()
+
+	client := FakeClient(conn, &tlsCfg)
+
+	client.FakeHandshake()
+
+	if client.handshakeErr != nil {
+		t.Error(client.handshakeErr)
+	}
 }
