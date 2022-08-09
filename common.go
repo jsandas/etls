@@ -976,6 +976,15 @@ var supportedVersions = []uint16{
 	VersionTLS10,
 }
 
+// fakeSupportedVersions adds SSL3 support
+var fakeSupportedVersions = []uint16{
+	VersionTLS13,
+	VersionTLS12,
+	VersionTLS11,
+	VersionTLS10,
+	VersionSSL30,
+}
+
 // roleClient and roleServer are meant to call supportedVersions and parents
 // with more readability at the callsite.
 const roleClient = true
@@ -1003,8 +1012,44 @@ func (c *Config) supportedVersions(isClient bool) []uint16 {
 	return versions
 }
 
+// fakeSupportedVersions duplicates supportedVersions method except it
+// relies on the fakeSupportedVersions list to allow SSL3
+// This should only be used for testing server protocol support
+func (c *Config) fakeSupportedVersions(isClient bool) []uint16 {
+	versions := make([]uint16, 0, len(fakeSupportedVersions))
+	for _, v := range fakeSupportedVersions {
+		// if needFIPS() && (v < fipsMinVersion(c) || v > fipsMaxVersion(c)) {
+		// if needFIPS() && (v < fipsMinVersion(c)) {
+		// 	continue
+		// }
+		if (c == nil || c.MinVersion == 0) &&
+			isClient && v < VersionTLS12 {
+			continue
+		}
+		if c != nil && c.MinVersion != 0 && v < c.MinVersion {
+			continue
+		}
+		if c != nil && c.MaxVersion != 0 && v > c.MaxVersion {
+			continue
+		}
+		versions = append(versions, v)
+	}
+	return versions
+}
+
 func (c *Config) maxSupportedVersion(isClient bool) uint16 {
 	supportedVersions := c.supportedVersions(isClient)
+	if len(supportedVersions) == 0 {
+		return 0
+	}
+	return supportedVersions[0]
+}
+
+// fakeMaxSupportedVersion duplicates maxSupportedVersion method except
+// it relies on the  fakeSupportedVersions method to allow SSL3
+// This should only be used for testing server protocol support
+func (c *Config) fakeMaxSupportedVersion(isClient bool) uint16 {
+	supportedVersions := c.fakeSupportedVersions(isClient)
 	if len(supportedVersions) == 0 {
 		return 0
 	}
@@ -1050,6 +1095,21 @@ func (c *Config) supportsCurve(curve CurveID) bool {
 // versions of the peer. Priority is given to the peer preference order.
 func (c *Config) mutualVersion(isClient bool, peerVersions []uint16) (uint16, bool) {
 	supportedVersions := c.supportedVersions(isClient)
+	for _, peerVersion := range peerVersions {
+		for _, v := range supportedVersions {
+			if v == peerVersion {
+				return v, true
+			}
+		}
+	}
+	return 0, false
+}
+
+// fakeMutualVersion duplicates mutualVersion method except it relies
+// on the fakeSupportedVersions method to allow SSL3
+// This should only be used for testing server protocol support
+func (c *Config) fakeMutualVersion(isClient bool, peerVersions []uint16) (uint16, bool) {
+	supportedVersions := c.fakeSupportedVersions(isClient)
 	for _, peerVersion := range peerVersions {
 		for _, v := range supportedVersions {
 			if v == peerVersion {

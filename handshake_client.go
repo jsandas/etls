@@ -54,12 +54,12 @@ func (c *Conn) makeFakeClientHello() (*clientHelloMsg, ecdheParameters, error) {
 		return nil, nil, errors.New("tls: NextProtos values too large")
 	}
 
-	supportedVersions := config.supportedVersions(roleClient)
+	supportedVersions := config.fakeSupportedVersions(roleClient)
 	if len(supportedVersions) == 0 {
 		return nil, nil, errors.New("tls: no supported versions satisfy MinVersion and MaxVersion")
 	}
 
-	clientHelloVersion := config.maxSupportedVersion(roleClient)
+	clientHelloVersion := config.fakeMaxSupportedVersion(roleClient)
 	// The version at the beginning of the ClientHello was capped at TLS 1.2
 	// for compatibility reasons. The supported_versions extension is used
 	// to negotiate versions now. See RFC 8446, Section 4.2.1.
@@ -401,14 +401,14 @@ func (c *Conn) fakeClientHandshake(ctx context.Context) (err error) {
 		return unexpectedMessageError(serverHello, msg)
 	}
 
-	if err := c.pickTLSVersion(serverHello); err != nil {
+	if err := c.fakePickTLSVersion(serverHello); err != nil {
 		return err
 	}
 
 	// If we are negotiating a protocol version that's lower than what we
 	// support, check for the server downgrade canaries.
 	// See RFC 8446, Section 4.1.3.
-	maxVers := c.config.maxSupportedVersion(roleClient)
+	maxVers := c.config.fakeMaxSupportedVersion(roleClient)
 	tls12Downgrade := string(serverHello.random[24:]) == downgradeCanaryTLS12
 	tls11Downgrade := string(serverHello.random[24:]) == downgradeCanaryTLS11
 	if maxVers == VersionTLS13 && c.vers <= VersionTLS12 && (tls12Downgrade || tls11Downgrade) ||
@@ -590,6 +590,26 @@ func (c *Conn) pickTLSVersion(serverHello *serverHelloMsg) error {
 	return nil
 }
 
+func (c *Conn) fakePickTLSVersion(serverHello *serverHelloMsg) error {
+	peerVersion := serverHello.vers
+	if serverHello.supportedVersion != 0 {
+		peerVersion = serverHello.supportedVersion
+	}
+
+	vers, ok := c.config.fakeMutualVersion(roleClient, []uint16{peerVersion})
+	if !ok {
+		c.sendAlert(alertProtocolVersion)
+		return fmt.Errorf("tls: server selected unsupported protocol version %x", peerVersion)
+	}
+
+	c.vers = vers
+	c.haveVers = true
+	c.in.version = vers
+	c.out.version = vers
+
+	return nil
+}
+
 // Does the handshake, either a full one or resumes old session. Requires hs.c,
 // hs.hello, hs.serverHello, and, optionally, hs.session to be set.
 func (hs *clientHandshakeState) handshake() error {
@@ -669,6 +689,9 @@ func (hs *clientHandshakeState) handshake() error {
 	return nil
 }
 
+// fakeHandshake() is similar to handshake() except is does not attempt to complete
+// the entire TLS handshake process.  This is used for the purpose of evaluating the
+// serverHello for cipher support
 func (hs *clientHandshakeState) fakeHandshake() error {
 	// c := hs.c
 
@@ -676,72 +699,6 @@ func (hs *clientHandshakeState) fakeHandshake() error {
 	if err != nil {
 		return err
 	}
-
-	// hs.finishedHash = newFinishedHash(c.vers, hs.suite)
-
-	// // No signatures of the handshake are needed in a resumption.
-	// // Otherwise, in a full handshake, if we don't have any certificates
-	// // configured then we will never send a CertificateVerify message and
-	// // thus no signatures are needed in that case either.
-	// if isResume || (len(c.config.Certificates) == 0 && c.config.GetClientCertificate == nil) {
-	// 	hs.finishedHash.discardHandshakeBuffer()
-	// }
-
-	// hs.finishedHash.Write(hs.hello.marshal())
-	// hs.finishedHash.Write(hs.serverHello.marshal())
-
-	// c.buffering = true
-	// c.didResume = isResume
-	// if isResume {
-	// 	if err := hs.establishKeys(); err != nil {
-	// 		return err
-	// 	}
-	// 	if err := hs.readSessionTicket(); err != nil {
-	// 		return err
-	// 	}
-	// 	if err := hs.readFinished(c.serverFinished[:]); err != nil {
-	// 		return err
-	// 	}
-	// 	c.clientFinishedIsFirst = false
-	// 	// Make sure the connection is still being verified whether or not this
-	// 	// is a resumption. Resumptions currently don't reverify certificates so
-	// 	// they don't call verifyServerCertificate. See Issue 31641.
-	// 	if c.config.VerifyConnection != nil {
-	// 		if err := c.config.VerifyConnection(c.connectionStateLocked()); err != nil {
-	// 			c.sendAlert(alertBadCertificate)
-	// 			return err
-	// 		}
-	// 	}
-	// 	if err := hs.sendFinished(c.clientFinished[:]); err != nil {
-	// 		return err
-	// 	}
-	// 	if _, err := c.flush(); err != nil {
-	// 		return err
-	// 	}
-	// } else {
-	// 	if err := hs.doFullHandshake(); err != nil {
-	// 		return err
-	// 	}
-	// 	if err := hs.establishKeys(); err != nil {
-	// 		return err
-	// 	}
-	// 	if err := hs.sendFinished(c.clientFinished[:]); err != nil {
-	// 		return err
-	// 	}
-	// 	if _, err := c.flush(); err != nil {
-	// 		return err
-	// 	}
-	// 	c.clientFinishedIsFirst = true
-	// 	if err := hs.readSessionTicket(); err != nil {
-	// 		return err
-	// 	}
-	// 	if err := hs.readFinished(c.serverFinished[:]); err != nil {
-	// 		return err
-	// 	}
-	// }
-
-	// c.ekm = ekmFromMasterSecret(c.vers, hs.suite, hs.masterSecret, hs.hello.random, hs.serverHello.random)
-	// atomic.StoreUint32(&c.handshakeStatus, 1)
 
 	return nil
 }

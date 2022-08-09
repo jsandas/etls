@@ -109,6 +109,9 @@ func (hs *clientHandshakeStateTLS13) handshake() error {
 	return nil
 }
 
+// fakeHandshake() is similar to handshake() except is does not attempt to complete
+// the entire TLS handshake process.  This is used for the purpose of evaluating the
+// serverHello for cipher support
 func (hs *clientHandshakeStateTLS13) fakeHandshake() error {
 	c := hs.c
 
@@ -150,32 +153,6 @@ func (hs *clientHandshakeStateTLS13) fakeHandshake() error {
 	if err := hs.processServerHello(); err != nil {
 		return err
 	}
-	// if err := hs.sendDummyChangeCipherSpec(); err != nil {
-	// 	return err
-	// }
-	// if err := hs.establishHandshakeKeys(); err != nil {
-	// 	return err
-	// }
-	// if err := hs.readServerParameters(); err != nil {
-	// 	return err
-	// }
-	// if err := hs.readServerCertificate(); err != nil {
-	// 	return err
-	// }
-	// if err := hs.readServerFinished(); err != nil {
-	// 	return err
-	// }
-	// if err := hs.sendClientCertificate(); err != nil {
-	// 	return err
-	// }
-	// if err := hs.sendClientFinished(); err != nil {
-	// 	return err
-	// }
-	// if _, err := c.flush(); err != nil {
-	// 	return err
-	// }
-
-	// atomic.StoreUint32(&c.handshakeStatus, 1)
 
 	return nil
 }

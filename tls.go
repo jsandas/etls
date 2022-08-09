@@ -54,6 +54,11 @@ func Client(conn net.Conn, config *Config) *Conn {
 	return c
 }
 
+// FakeClient returns a new TLS client side connection
+// using conn as the underlying transport.
+// The config cannot be nil: users must set either ServerName or
+// InsecureSkipVerify in the config.
+// This can be used for testing TLS support of a remote server
 func FakeClient(conn net.Conn, config *Config) *Conn {
 	c := &Conn{
 		conn:     conn,

@@ -1389,6 +1389,11 @@ func (c *Conn) Handshake() error {
 	return c.HandshakeContext(context.Background())
 }
 
+// FakeHandshake runs the client handshake protocol
+// This is used only to execute FakeHandshakeContext
+//
+// For control over canceling or setting a timeout on a handshake, use
+// HandshakeContext or the Dialer's DialContext method instead.
 func (c *Conn) FakeHandshake() error {
 	return c.FakeHandshakeContext(context.Background())
 }
@@ -1409,6 +1414,12 @@ func (c *Conn) HandshakeContext(ctx context.Context) error {
 	return c.handshakeContext(ctx)
 }
 
+// FakeHandshakeContext runs the client handshake
+// protocol if it has not yet been run.
+// This is used mainly to execute fakeHandshakeContext
+//
+// Most uses of this package need not call HandshakeContext explicitly: the
+// first Read or Write will call it automatically.
 func (c *Conn) FakeHandshakeContext(ctx context.Context) error {
 	// Delegate to unexported method for named return
 	// without confusing documented signature.
@@ -1488,6 +1499,9 @@ func (c *Conn) handshakeContext(ctx context.Context) (ret error) {
 	return c.handshakeErr
 }
 
+// fakeHandshakeContext is similar to handshakeContext except it does
+// not complete the TLS handshake since it's purpose is just to evaluate
+// compatibilty of the specified protocol(s) and/or cipher(s)
 func (c *Conn) fakeHandshakeContext(ctx context.Context) (ret error) {
 	// Fast sync/atomic-based exit if there is no handshake in flight and the
 	// last one succeeded without an error. Avoids the expensive context setup
