@@ -318,30 +318,30 @@ var cipherSuites = []*cipherSuite{ // TODO: replace with a map, since the order 
 	// start of ciphers for testing purposes
 	{TLS_RSA_WITH_NULL_MD5, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
 	{TLS_RSA_WITH_NULL_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
-	{TLS_RSA_EXPORT_WITH_RC4_40_MD5, 0, 0, 0, rsaKA, 0, cipherRC4, macSHA1, nil},
+	{TLS_RSA_EXPORT_WITH_RC4_40_MD5, 10, 0, 0, rsaKA, 0, cipherRC4, macSHA1, nil},
 	{TLS_RSA_WITH_RC4_128_MD5, 0, 0, 0, rsaKA, 0, cipherRC4, macSHA1, nil},
 	{TLS_RSA_WITH_RC4_128_SHA, 16, 20, 0, rsaKA, 0, cipherRC4, macSHA1, nil},
 	{TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
 	{TLS_RSA_WITH_IDEA_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
-	{TLS_RSA_EXPORT_WITH_DES40_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
-	{TLS_RSA_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
+	{TLS_RSA_EXPORT_WITH_DES40_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherDES, macSHA1, nil},
+	{TLS_RSA_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherDES, macSHA1, nil},
 	{TLS_RSA_WITH_3DES_EDE_CBC_SHA, 24, 20, 8, rsaKA, 0, cipher3DES, macSHA1, nil},
-	{TLS_DH_DSS_EXPORT_WITH_DES40_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
-	{TLS_DH_DSS_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
+	{TLS_DH_DSS_EXPORT_WITH_DES40_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherDES, macSHA1, nil},
+	{TLS_DH_DSS_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherDES, macSHA1, nil},
 	{TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA, 24, 20, 8, rsaKA, 0, cipher3DES, macSHA1, nil},
-	{TLS_DH_RSA_EXPORT_WITH_DES40_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
-	{TLS_DH_RSA_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
+	{TLS_DH_RSA_EXPORT_WITH_DES40_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherDES, macSHA1, nil},
+	{TLS_DH_RSA_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherDES, macSHA1, nil},
 	{TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA, 24, 20, 8, rsaKA, 0, cipher3DES, macSHA1, nil},
 	{TLS_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
-	{TLS_DHE_DSS_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
+	{TLS_DHE_DSS_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherDES, macSHA1, nil},
 	{TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA, 24, 20, 8, rsaKA, 0, cipher3DES, macSHA1, nil},
-	{TLS_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
-	{TLS_DHE_RSA_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
+	{TLS_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherDES, macSHA1, nil},
+	{TLS_DHE_RSA_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherDES, macSHA1, nil},
 	{TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA, 24, 20, 8, rsaKA, 0, cipher3DES, macSHA1, nil},
 	{TLS_DH_anon_EXPORT_WITH_RC4_40_MD5, 0, 0, 0, rsaKA, 0, cipherRC4, macSHA1, nil},
 	{TLS_DH_anon_WITH_RC4_128_MD5, 0, 0, 0, rsaKA, 0, cipherRC4, macSHA1, nil},
-	{TLS_DH_anon_EXPORT_WITH_DES40_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
-	{TLS_DH_anon_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
+	{TLS_DH_anon_EXPORT_WITH_DES40_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherDES, macSHA1, nil},
+	{TLS_DH_anon_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherDES, macSHA1, nil},
 	{TLS_DH_anon_WITH_3DES_EDE_CBC_SHA, 24, 20, 8, rsaKA, 0, cipher3DES, macSHA1, nil},
 	{TLS_RSA_WITH_AES_128_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
 	{TLS_DH_DSS_WITH_AES_128_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
@@ -368,8 +368,8 @@ var cipherSuites = []*cipherSuite{ // TODO: replace with a map, since the order 
 	{TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA, 0, 0, 0, rsaKA, 0, nil, macSHA1, nil},
 	{TLS_RSA_EXPORT1024_WITH_RC4_56_MD5, 0, 0, 0, rsaKA, 0, cipherRC4, macSHA1, nil},
 	{TLS_RSA_EXPORT1024_WITH_RC2_CBC_56_MD5, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
-	{TLS_RSA_EXPORT1024_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
-	{TLS_DHE_DSS_EXPORT1024_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherAES, macSHA1, nil},
+	{TLS_RSA_EXPORT1024_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherDES, macSHA1, nil},
+	{TLS_DHE_DSS_EXPORT1024_WITH_DES_CBC_SHA, 0, 0, 0, rsaKA, 0, cipherDES, macSHA1, nil},
 	{TLS_RSA_EXPORT1024_WITH_RC4_56_SHA, 0, 0, 0, rsaKA, 0, cipherRC4, macSHA1, nil},
 	{TLS_DHE_DSS_EXPORT1024_WITH_RC4_56_SHA, 0, 0, 0, rsaKA, 0, cipherRC4, macSHA1, nil},
 	{TLS_DHE_DSS_WITH_RC4_128_SHA, 16, 20, 0, rsaKA, 0, cipherRC4, macSHA1, nil},
@@ -716,6 +716,15 @@ func cipherRC4(key, iv []byte, isRead bool) any {
 func cipher3DES(key, iv []byte, isRead bool) any {
 
 	block, _ := des.NewTripleDESCipher(key)
+	if isRead {
+		return cipher.NewCBCDecrypter(block, iv)
+	}
+	return cipher.NewCBCEncrypter(block, iv)
+}
+
+func cipherDES(key, iv []byte, isRead bool) any {
+
+	block, _ := des.NewCipher(key)
 	if isRead {
 		return cipher.NewCBCDecrypter(block, iv)
 	}
