@@ -466,6 +466,7 @@ var cipherSuites = []*cipherSuite{ // TODO: replace with a map, since the order 
 	{TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384, 0, 0, 0, ecdheECDSAKA, suiteECDHE | suiteECSign | suiteTLS12 | suiteSHA384 | suiteTestingOnly, cipherAES, nil, nil},
 	{TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256, 0, 0, 0, nil, suiteECSign | suiteTLS12 | suiteTestingOnly, cipherAES, macSHA256, nil},
 	{TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384, 0, 0, 0, nil, suiteECSign | suiteTLS12 | suiteSHA384 | suiteTestingOnly, cipherAES, nil, nil},
+	{TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384, 0, 0, 0, nil, suiteECDHE | suiteECSign | suiteTLS12 | suiteSHA384 | suiteTestingOnly, cipherAES, nil, nil},
 	{TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256, 0, 0, 0, nil, suiteTLS12 | suiteTestingOnly, cipherAES, macSHA1, nil},
 	{TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384, 0, 0, 0, nil, suiteTLS12 | suiteSHA384 | suiteTestingOnly, cipherAES, nil, nil},
 	{TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256, 0, 0, 0, nil, suiteECSign | suiteTLS12 | suiteTestingOnly, nil, nil, aeadAESGCM},
