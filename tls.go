@@ -58,7 +58,9 @@ func Client(conn net.Conn, config *Config) *Conn {
 // using conn as the underlying transport.
 // The config cannot be nil: users must set either ServerName or
 // InsecureSkipVerify in the config.
-// This can be used for testing TLS support of a remote server
+// This is used for testing TLS support of a server by creating a fake client.
+// It does not complete the handshake and cannot be used for actual TLS
+// communication.
 func FakeClient(conn net.Conn, config *Config) *Conn {
 	c := &Conn{
 		conn:     conn,
