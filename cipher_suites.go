@@ -64,6 +64,8 @@ func CipherSuites() []*CipherSuite {
 		{TLS_AES_128_GCM_SHA256, "TLS_AES_128_GCM_SHA256", supportedOnlyTLS13, false},
 		{TLS_AES_256_GCM_SHA384, "TLS_AES_256_GCM_SHA384", supportedOnlyTLS13, false},
 		{TLS_CHACHA20_POLY1305_SHA256, "TLS_CHACHA20_POLY1305_SHA256", supportedOnlyTLS13, false},
+		{TLS_AES_128_CCM_SHA256, "TLS_AES_128_CCM_SHA256", supportedOnlyTLS13, false},
+		{TLS_AES_128_CCM_8_SHA256, "TLS_AES_128_CCM_8_SHA256", supportedOnlyTLS13, false},
 
 		{TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA", supportedUpToTLS12, false},
 		{TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA", supportedUpToTLS12, false},
@@ -517,8 +519,8 @@ var cipherSuitesTLS13 = []*cipherSuiteTLS13{ // TODO: replace with a map.
 	{TLS_AES_128_GCM_SHA256, 16, aeadAESGCMTLS13, crypto.SHA256},
 	{TLS_CHACHA20_POLY1305_SHA256, 32, aeadChaCha20Poly1305, crypto.SHA256},
 	{TLS_AES_256_GCM_SHA384, 32, aeadAESGCMTLS13, crypto.SHA384},
-	// {TLS_AES_128_CCM_SHA256, 16, nil, crypto.SHA256},
-	// {TLS_AES_128_CCM_8_SHA256, 16, nil, crypto.SHA256},
+	{TLS_AES_128_CCM_SHA256, 0, nil, crypto.SHA256},
+	{TLS_AES_128_CCM_8_SHA256, 0, nil, crypto.SHA256},
 }
 
 // cipherSuitesPreferenceOrder is the order in which we'll select (on the
