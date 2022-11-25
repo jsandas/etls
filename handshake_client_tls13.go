@@ -20,7 +20,7 @@ type clientHandshakeStateTLS13 struct {
 	c           *Conn
 	ctx         context.Context
 	serverHello *serverHelloMsg
-	hello       *clientHelloMsg
+	hello       *ClientHelloMsg
 	ecdheParams ecdheParameters
 
 	session     *ClientSessionState

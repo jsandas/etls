@@ -16,7 +16,7 @@ import (
 )
 
 var tests = []any{
-	&clientHelloMsg{},
+	&ClientHelloMsg{},
 	&serverHelloMsg{},
 	&finishedMsg{},
 
@@ -113,8 +113,8 @@ func randomString(n int, rand *rand.Rand) string {
 	return string(b)
 }
 
-func (*clientHelloMsg) Generate(rand *rand.Rand, size int) reflect.Value {
-	m := &clientHelloMsg{}
+func (*ClientHelloMsg) Generate(rand *rand.Rand, size int) reflect.Value {
+	m := &ClientHelloMsg{}
 	m.vers = uint16(rand.Intn(65536))
 	m.random = randomBytes(32, rand)
 	m.sessionId = randomBytes(rand.Intn(32), rand)
@@ -470,7 +470,7 @@ func TestRejectDuplicateExtensions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to decode test ClientHello: %s", err)
 	}
-	var clientHelloCopy clientHelloMsg
+	var clientHelloCopy ClientHelloMsg
 	if clientHelloCopy.unmarshal(clientHelloBytes) {
 		t.Error("Unmarshaled ClientHello with duplicate extensions")
 	}

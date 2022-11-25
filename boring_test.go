@@ -29,7 +29,7 @@ func TestBoringServerProtocolVersion(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			serverConfig := testConfig.Clone()
 			serverConfig.MinVersion = VersionSSL30
-			clientHello := &clientHelloMsg{
+			clientHello := &ClientHelloMsg{
 				vers:               v,
 				random:             make([]byte, 32),
 				cipherSuites:       allCipherSuites(),
@@ -121,7 +121,7 @@ func TestBoringServerCipherSuites(t *testing.T) {
 		}
 		serverConfig.BuildNameToCertificate()
 		t.Run(fmt.Sprintf("suite=%#x", id), func(t *testing.T) {
-			clientHello := &clientHelloMsg{
+			clientHello := &ClientHelloMsg{
 				vers:               VersionTLS12,
 				random:             make([]byte, 32),
 				cipherSuites:       []uint16{id},
@@ -153,7 +153,7 @@ func TestBoringServerCurves(t *testing.T) {
 
 	for _, curveid := range defaultCurvePreferences {
 		t.Run(fmt.Sprintf("curve=%d", curveid), func(t *testing.T) {
-			clientHello := &clientHelloMsg{
+			clientHello := &ClientHelloMsg{
 				vers:               VersionTLS12,
 				random:             make([]byte, 32),
 				cipherSuites:       []uint16{TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
@@ -272,7 +272,7 @@ func TestBoringClientHello(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	hello, ok := msg.(*clientHelloMsg)
+	hello, ok := msg.(*ClientHelloMsg)
 	if !ok {
 		t.Fatalf("unexpected message type %T", msg)
 	}

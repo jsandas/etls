@@ -26,7 +26,7 @@ const maxClientPSKIdentities = 5
 type serverHandshakeStateTLS13 struct {
 	c               *Conn
 	ctx             context.Context
-	clientHello     *clientHelloMsg
+	clientHello     *ClientHelloMsg
 	hello           *serverHelloMsg
 	sentDummyCCS    bool
 	usingPSK        bool
@@ -432,7 +432,7 @@ func (hs *serverHandshakeStateTLS13) doHelloRetryRequest(selectedGroup CurveID) 
 		return err
 	}
 
-	clientHello, ok := msg.(*clientHelloMsg)
+	clientHello, ok := msg.(*ClientHelloMsg)
 	if !ok {
 		c.sendAlert(alertUnexpectedMessage)
 		return unexpectedMessageError(clientHello, msg)
@@ -460,7 +460,7 @@ func (hs *serverHandshakeStateTLS13) doHelloRetryRequest(selectedGroup CurveID) 
 // illegalClientHelloChange reports whether the two ClientHello messages are
 // different, with the exception of the changes allowed before and after a
 // HelloRetryRequest. See RFC 8446, Section 4.1.2.
-func illegalClientHelloChange(ch, ch1 *clientHelloMsg) bool {
+func illegalClientHelloChange(ch, ch1 *ClientHelloMsg) bool {
 	if len(ch.supportedVersions) != len(ch1.supportedVersions) ||
 		len(ch.cipherSuites) != len(ch1.cipherSuites) ||
 		len(ch.supportedCurves) != len(ch1.supportedCurves) ||

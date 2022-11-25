@@ -27,7 +27,7 @@ type clientHandshakeState struct {
 	c            *Conn
 	ctx          context.Context
 	serverHello  *serverHelloMsg
-	hello        *clientHelloMsg
+	hello        *ClientHelloMsg
 	suite        *cipherSuite
 	finishedHash finishedHash
 	masterSecret []byte
@@ -36,7 +36,7 @@ type clientHandshakeState struct {
 
 var testingOnlyForceClientHelloSignatureAlgorithms []SignatureScheme
 
-func (c *Conn) makeFakeClientHello() (*clientHelloMsg, ecdheParameters, error) {
+func (c *Conn) makeFakeClientHello() (*ClientHelloMsg, ecdheParameters, error) {
 	config := c.config
 	if len(config.ServerName) == 0 && !config.InsecureSkipVerify {
 		return nil, nil, errors.New("tls: either ServerName or InsecureSkipVerify must be specified in the tls.Config")
@@ -67,7 +67,7 @@ func (c *Conn) makeFakeClientHello() (*clientHelloMsg, ecdheParameters, error) {
 		clientHelloVersion = VersionTLS12
 	}
 
-	hello := &clientHelloMsg{
+	hello := &ClientHelloMsg{
 		vers:                         clientHelloVersion,
 		compressionMethods:           []uint8{compressionNone},
 		random:                       make([]byte, 32),
@@ -147,7 +147,7 @@ func (c *Conn) makeFakeClientHello() (*clientHelloMsg, ecdheParameters, error) {
 	return hello, params, nil
 }
 
-func (c *Conn) makeClientHello() (*clientHelloMsg, ecdheParameters, error) {
+func (c *Conn) makeClientHello() (*ClientHelloMsg, ecdheParameters, error) {
 	config := c.config
 	if len(config.ServerName) == 0 && !config.InsecureSkipVerify {
 		return nil, nil, errors.New("tls: either ServerName or InsecureSkipVerify must be specified in the tls.Config")
@@ -178,7 +178,7 @@ func (c *Conn) makeClientHello() (*clientHelloMsg, ecdheParameters, error) {
 		clientHelloVersion = VersionTLS12
 	}
 
-	hello := &clientHelloMsg{
+	hello := &ClientHelloMsg{
 		vers:                         clientHelloVersion,
 		compressionMethods:           []uint8{compressionNone},
 		random:                       make([]byte, 32),
@@ -454,7 +454,7 @@ func (c *Conn) fakeClientHandshake(ctx context.Context) (err error) {
 	return nil
 }
 
-func (c *Conn) loadSession(hello *clientHelloMsg) (cacheKey string,
+func (c *Conn) loadSession(hello *ClientHelloMsg) (cacheKey string,
 	session *ClientSessionState, earlySecret, binderKey []byte) {
 	if c.config.SessionTicketsDisabled || c.config.ClientSessionCache == nil {
 		return "", nil, nil, nil
