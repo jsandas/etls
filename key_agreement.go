@@ -23,14 +23,14 @@ type keyAgreement interface {
 	// In the case that the key agreement protocol doesn't use a
 	// ServerKeyExchange message, generateServerKeyExchange can return nil,
 	// nil.
-	generateServerKeyExchange(*Config, *Certificate, *ClientHelloMsg, *serverHelloMsg) (*serverKeyExchangeMsg, error)
+	generateServerKeyExchange(*Config, *Certificate, *ClientHelloMsg, *ServerHelloMsg) (*serverKeyExchangeMsg, error)
 	processClientKeyExchange(*Config, *Certificate, *clientKeyExchangeMsg, uint16) ([]byte, error)
 
 	// On the client side, the next two methods are called in order.
 
 	// This method may not be called if the server doesn't send a
 	// ServerKeyExchange message.
-	processServerKeyExchange(*Config, *ClientHelloMsg, *serverHelloMsg, *x509.Certificate, *serverKeyExchangeMsg) error
+	processServerKeyExchange(*Config, *ClientHelloMsg, *ServerHelloMsg, *x509.Certificate, *serverKeyExchangeMsg) error
 	generateClientKeyExchange(*Config, *ClientHelloMsg, *x509.Certificate) ([]byte, *clientKeyExchangeMsg, error)
 }
 
@@ -41,7 +41,7 @@ var errServerKeyExchange = errors.New("tls: invalid ServerKeyExchange message")
 // encrypts the pre-master secret to the server's public key.
 type rsaKeyAgreement struct{}
 
-func (ka rsaKeyAgreement) generateServerKeyExchange(config *Config, cert *Certificate, clientHello *ClientHelloMsg, hello *serverHelloMsg) (*serverKeyExchangeMsg, error) {
+func (ka rsaKeyAgreement) generateServerKeyExchange(config *Config, cert *Certificate, clientHello *ClientHelloMsg, hello *ServerHelloMsg) (*serverKeyExchangeMsg, error) {
 	return nil, nil
 }
 
@@ -73,7 +73,7 @@ func (ka rsaKeyAgreement) processClientKeyExchange(config *Config, cert *Certifi
 	return preMasterSecret, nil
 }
 
-func (ka rsaKeyAgreement) processServerKeyExchange(config *Config, clientHello *ClientHelloMsg, serverHello *serverHelloMsg, cert *x509.Certificate, skx *serverKeyExchangeMsg) error {
+func (ka rsaKeyAgreement) processServerKeyExchange(config *Config, clientHello *ClientHelloMsg, serverHello *ServerHelloMsg, cert *x509.Certificate, skx *serverKeyExchangeMsg) error {
 	return errors.New("tls: unexpected ServerKeyExchange")
 }
 
@@ -165,7 +165,7 @@ type ecdheKeyAgreement struct {
 	preMasterSecret []byte
 }
 
-func (ka *ecdheKeyAgreement) generateServerKeyExchange(config *Config, cert *Certificate, clientHello *ClientHelloMsg, hello *serverHelloMsg) (*serverKeyExchangeMsg, error) {
+func (ka *ecdheKeyAgreement) generateServerKeyExchange(config *Config, cert *Certificate, clientHello *ClientHelloMsg, hello *ServerHelloMsg) (*serverKeyExchangeMsg, error) {
 	var curveID CurveID
 	for _, c := range clientHello.supportedCurves {
 		if config.supportsCurve(c) {
@@ -267,7 +267,7 @@ func (ka *ecdheKeyAgreement) processClientKeyExchange(config *Config, cert *Cert
 	return preMasterSecret, nil
 }
 
-func (ka *ecdheKeyAgreement) processServerKeyExchange(config *Config, clientHello *ClientHelloMsg, serverHello *serverHelloMsg, cert *x509.Certificate, skx *serverKeyExchangeMsg) error {
+func (ka *ecdheKeyAgreement) processServerKeyExchange(config *Config, clientHello *ClientHelloMsg, serverHello *ServerHelloMsg, cert *x509.Certificate, skx *serverKeyExchangeMsg) error {
 	if len(skx.key) < 4 {
 		return errServerKeyExchange
 	}

@@ -17,7 +17,7 @@ import (
 
 var tests = []any{
 	&ClientHelloMsg{},
-	&serverHelloMsg{},
+	&ServerHelloMsg{},
 	&finishedMsg{},
 
 	&certificateMsg{},
@@ -195,8 +195,8 @@ func (*ClientHelloMsg) Generate(rand *rand.Rand, size int) reflect.Value {
 	return reflect.ValueOf(m)
 }
 
-func (*serverHelloMsg) Generate(rand *rand.Rand, size int) reflect.Value {
-	m := &serverHelloMsg{}
+func (*ServerHelloMsg) Generate(rand *rand.Rand, size int) reflect.Value {
+	m := &ServerHelloMsg{}
 	m.vers = uint16(rand.Intn(65536))
 	m.random = randomBytes(32, rand)
 	m.sessionId = randomBytes(rand.Intn(32), rand)
@@ -409,14 +409,14 @@ func TestRejectEmptySCTList(t *testing.T) {
 
 	var random [32]byte
 	sct := []byte{0x42, 0x42, 0x42, 0x42}
-	serverHello := serverHelloMsg{
+	serverHello := ServerHelloMsg{
 		vers:   VersionTLS12,
 		random: random[:],
 		scts:   [][]byte{sct},
 	}
 	serverHelloBytes := serverHello.marshal()
 
-	var serverHelloCopy serverHelloMsg
+	var serverHelloCopy ServerHelloMsg
 	if !serverHelloCopy.unmarshal(serverHelloBytes) {
 		t.Fatal("Failed to unmarshal initial message")
 	}
@@ -452,14 +452,14 @@ func TestRejectEmptySCT(t *testing.T) {
 	// not be zero length.
 
 	var random [32]byte
-	serverHello := serverHelloMsg{
+	serverHello := ServerHelloMsg{
 		vers:   VersionTLS12,
 		random: random[:],
 		scts:   [][]byte{nil},
 	}
 	serverHelloBytes := serverHello.marshal()
 
-	var serverHelloCopy serverHelloMsg
+	var serverHelloCopy ServerHelloMsg
 	if serverHelloCopy.unmarshal(serverHelloBytes) {
 		t.Fatal("Unmarshaled ServerHello with zero-length SCT")
 	}
@@ -479,7 +479,7 @@ func TestRejectDuplicateExtensions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to decode test ServerHello: %s", err)
 	}
-	var serverHelloCopy serverHelloMsg
+	var serverHelloCopy ServerHelloMsg
 	if serverHelloCopy.unmarshal(serverHelloBytes) {
 		t.Fatal("Unmarshaled ServerHello with duplicate extensions")
 	}

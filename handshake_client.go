@@ -26,7 +26,7 @@ import (
 type clientHandshakeState struct {
 	c            *Conn
 	ctx          context.Context
-	serverHello  *serverHelloMsg
+	serverHello  *ServerHelloMsg
 	hello        *ClientHelloMsg
 	suite        *cipherSuite
 	finishedHash finishedHash
@@ -297,7 +297,7 @@ func (c *Conn) clientHandshake(ctx context.Context) (err error) {
 		return err
 	}
 
-	serverHello, ok := msg.(*serverHelloMsg)
+	serverHello, ok := msg.(*ServerHelloMsg)
 	if !ok {
 		c.sendAlert(alertUnexpectedMessage)
 		return unexpectedMessageError(serverHello, msg)
@@ -395,7 +395,7 @@ func (c *Conn) fakeClientHandshake(ctx context.Context) (err error) {
 		return err
 	}
 
-	serverHello, ok := msg.(*serverHelloMsg)
+	serverHello, ok := msg.(*ServerHelloMsg)
 	if !ok {
 		c.sendAlert(alertUnexpectedMessage)
 		return unexpectedMessageError(serverHello, msg)
@@ -570,7 +570,7 @@ func (c *Conn) loadSession(hello *ClientHelloMsg) (cacheKey string,
 	return
 }
 
-func (c *Conn) pickTLSVersion(serverHello *serverHelloMsg) error {
+func (c *Conn) pickTLSVersion(serverHello *ServerHelloMsg) error {
 	peerVersion := serverHello.vers
 	if serverHello.supportedVersion != 0 {
 		peerVersion = serverHello.supportedVersion
@@ -590,7 +590,7 @@ func (c *Conn) pickTLSVersion(serverHello *serverHelloMsg) error {
 	return nil
 }
 
-func (c *Conn) fakePickTLSVersion(serverHello *serverHelloMsg) error {
+func (c *Conn) fakePickTLSVersion(serverHello *ServerHelloMsg) error {
 	peerVersion := serverHello.vers
 	if serverHello.supportedVersion != 0 {
 		peerVersion = serverHello.supportedVersion

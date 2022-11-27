@@ -594,7 +594,7 @@ func (m *ClientHelloMsg) unmarshal(data []byte) bool {
 	return true
 }
 
-type serverHelloMsg struct {
+type ServerHelloMsg struct {
 	raw                          []byte
 	vers                         uint16
 	random                       []byte
@@ -618,7 +618,7 @@ type serverHelloMsg struct {
 	selectedGroup CurveID
 }
 
-func (m *serverHelloMsg) marshal() []byte {
+func (m *ServerHelloMsg) marshal() []byte {
 	if m.raw != nil {
 		return m.raw
 	}
@@ -734,8 +734,8 @@ func (m *serverHelloMsg) marshal() []byte {
 	return m.raw
 }
 
-func (m *serverHelloMsg) unmarshal(data []byte) bool {
-	*m = serverHelloMsg{raw: data}
+func (m *ServerHelloMsg) unmarshal(data []byte) bool {
+	*m = ServerHelloMsg{raw: data}
 	s := cryptobyte.String(data)
 
 	if !s.Skip(4) || // message type and uint24 length field

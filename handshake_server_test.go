@@ -217,7 +217,7 @@ func TestRenegotiationExtension(t *testing.T) {
 	// handshake header.
 	serverHelloLen := int(buf[6])<<16 | int(buf[7])<<8 | int(buf[8])
 
-	var serverHello serverHelloMsg
+	var serverHello ServerHelloMsg
 	// unmarshal expects to be given the handshake header, but
 	// serverHelloLen doesn't include it.
 	if !serverHello.unmarshal(buf[5 : 9+serverHelloLen]) {
@@ -270,7 +270,7 @@ func TestTLS12OnlyCipherSuites(t *testing.T) {
 	if err, ok := reply.(error); ok {
 		t.Fatal(err)
 	}
-	serverHello, ok := reply.(*serverHelloMsg)
+	serverHello, ok := reply.(*ServerHelloMsg)
 	if !ok {
 		t.Fatalf("didn't get ServerHello message in reply. Got %v\n", reply)
 	}
@@ -325,7 +325,7 @@ func TestTLSPointFormats(t *testing.T) {
 			if err, ok := reply.(error); ok {
 				t.Fatal(err)
 			}
-			serverHello, ok := reply.(*serverHelloMsg)
+			serverHello, ok := reply.(*ServerHelloMsg)
 			if !ok {
 				t.Fatalf("didn't get ServerHello message in reply. Got %v\n", reply)
 			}

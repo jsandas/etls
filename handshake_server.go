@@ -26,7 +26,7 @@ type serverHandshakeState struct {
 	c            *Conn
 	ctx          context.Context
 	clientHello  *ClientHelloMsg
-	hello        *serverHelloMsg
+	hello        *ServerHelloMsg
 	suite        *cipherSuite
 	ecdheOk      bool
 	ecSignOk     bool
@@ -171,7 +171,7 @@ func (c *Conn) readClientHello(ctx context.Context) (*ClientHelloMsg, error) {
 func (hs *serverHandshakeState) processClientHello() error {
 	c := hs.c
 
-	hs.hello = new(serverHelloMsg)
+	hs.hello = new(ServerHelloMsg)
 	hs.hello.vers = c.vers
 
 	foundCompression := false

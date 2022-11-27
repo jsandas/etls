@@ -27,7 +27,7 @@ type serverHandshakeStateTLS13 struct {
 	c               *Conn
 	ctx             context.Context
 	clientHello     *ClientHelloMsg
-	hello           *serverHelloMsg
+	hello           *ServerHelloMsg
 	sentDummyCCS    bool
 	usingPSK        bool
 	suite           *cipherSuiteTLS13
@@ -90,7 +90,7 @@ func (hs *serverHandshakeStateTLS13) handshake() error {
 func (hs *serverHandshakeStateTLS13) processClientHello() error {
 	c := hs.c
 
-	hs.hello = new(serverHelloMsg)
+	hs.hello = new(ServerHelloMsg)
 
 	// TLS 1.3 froze the ServerHello.legacy_version field, and uses
 	// supported_versions instead. See RFC 8446, sections 4.1.3 and 4.2.1.
@@ -408,7 +408,7 @@ func (hs *serverHandshakeStateTLS13) doHelloRetryRequest(selectedGroup CurveID) 
 	hs.transcript.Write([]byte{typeMessageHash, 0, 0, uint8(len(chHash))})
 	hs.transcript.Write(chHash)
 
-	helloRetryRequest := &serverHelloMsg{
+	helloRetryRequest := &ServerHelloMsg{
 		vers:              hs.hello.vers,
 		random:            helloRetryRequestRandom,
 		sessionId:         hs.hello.sessionId,

@@ -1251,7 +1251,7 @@ func TestServerSelectingUnconfiguredApplicationProtocol(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	serverHello := &serverHelloMsg{
+	serverHello := &ServerHelloMsg{
 		vers:         VersionTLS12,
 		random:       make([]byte, 32),
 		cipherSuite:  TLS_RSA_WITH_AES_128_GCM_SHA256,
@@ -1495,7 +1495,7 @@ func TestServerSelectingUnconfiguredCipherSuite(t *testing.T) {
 
 	// Create a ServerHello that selects a different cipher suite than the
 	// sole one that the client offered.
-	serverHello := &serverHelloMsg{
+	serverHello := &ServerHelloMsg{
 		vers:        VersionTLS12,
 		random:      make([]byte, 32),
 		cipherSuite: TLS_RSA_WITH_AES_256_GCM_SHA384,
