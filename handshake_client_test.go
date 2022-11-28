@@ -1251,7 +1251,7 @@ func TestServerSelectingUnconfiguredApplicationProtocol(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	serverHello := &ServerHelloMsg{
+	serverHello := &serverHelloMsg{
 		vers:         VersionTLS12,
 		random:       make([]byte, 32),
 		cipherSuite:  TLS_RSA_WITH_AES_128_GCM_SHA256,
@@ -1453,7 +1453,7 @@ func TestHostnameInSNI(t *testing.T) {
 		c.Close()
 		s.Close()
 
-		var m ClientHelloMsg
+		var m clientHelloMsg
 		if !m.unmarshal(record) {
 			t.Errorf("unmarshaling ClientHello for %q failed", tt.in)
 			continue
@@ -1495,7 +1495,7 @@ func TestServerSelectingUnconfiguredCipherSuite(t *testing.T) {
 
 	// Create a ServerHello that selects a different cipher suite than the
 	// sole one that the client offered.
-	serverHello := &ServerHelloMsg{
+	serverHello := &serverHelloMsg{
 		vers:        VersionTLS12,
 		random:      make([]byte, 32),
 		cipherSuite: TLS_RSA_WITH_AES_256_GCM_SHA384,

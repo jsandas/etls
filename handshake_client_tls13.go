@@ -19,8 +19,8 @@ import (
 type clientHandshakeStateTLS13 struct {
 	c           *Conn
 	ctx         context.Context
-	serverHello *ServerHelloMsg
-	hello       *ClientHelloMsg
+	serverHello *serverHelloMsg
+	hello       *clientHelloMsg
 	ecdheParams ecdheParameters
 
 	session     *ClientSessionState
@@ -322,7 +322,7 @@ func (hs *clientHandshakeStateTLS13) processHelloRetryRequest() error {
 		return err
 	}
 
-	serverHello, ok := msg.(*ServerHelloMsg)
+	serverHello, ok := msg.(*serverHelloMsg)
 	if !ok {
 		c.sendAlert(alertUnexpectedMessage)
 		return unexpectedMessageError(serverHello, msg)

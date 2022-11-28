@@ -66,7 +66,7 @@ func readUint24LengthPrefixed(s *cryptobyte.String, out *[]byte) bool {
 	return s.ReadUint24LengthPrefixed((*cryptobyte.String)(out))
 }
 
-type ClientHelloMsg struct {
+type clientHelloMsg struct {
 	raw                              []byte
 	vers                             uint16
 	random                           []byte
@@ -94,7 +94,7 @@ type ClientHelloMsg struct {
 	pskBinders                       [][]byte
 }
 
-func (m *ClientHelloMsg) marshal() []byte {
+func (m *clientHelloMsg) marshal() []byte {
 	if m.raw != nil {
 		return m.raw
 	}
@@ -303,7 +303,7 @@ func (m *ClientHelloMsg) marshal() []byte {
 // marshalWithoutBinders returns the ClientHello through the
 // PreSharedKeyExtension.identities field, according to RFC 8446, Section
 // 4.2.11.2. Note that m.pskBinders must be set to slices of the correct length.
-func (m *ClientHelloMsg) marshalWithoutBinders() []byte {
+func (m *clientHelloMsg) marshalWithoutBinders() []byte {
 	bindersLen := 2 // uint16 length prefix
 	for _, binder := range m.pskBinders {
 		bindersLen += 1 // uint8 length prefix
@@ -317,7 +317,7 @@ func (m *ClientHelloMsg) marshalWithoutBinders() []byte {
 // updateBinders updates the m.pskBinders field, if necessary updating the
 // cached marshaled representation. The supplied binders must have the same
 // length as the current m.pskBinders.
-func (m *ClientHelloMsg) updateBinders(pskBinders [][]byte) {
+func (m *clientHelloMsg) updateBinders(pskBinders [][]byte) {
 	if len(pskBinders) != len(m.pskBinders) {
 		panic("tls: internal error: pskBinders length mismatch")
 	}
@@ -343,8 +343,8 @@ func (m *ClientHelloMsg) updateBinders(pskBinders [][]byte) {
 	}
 }
 
-func (m *ClientHelloMsg) unmarshal(data []byte) bool {
-	*m = ClientHelloMsg{raw: data}
+func (m *clientHelloMsg) unmarshal(data []byte) bool {
+	*m = clientHelloMsg{raw: data}
 	s := cryptobyte.String(data)
 
 	if !s.Skip(4) || // message type and uint24 length field
@@ -594,7 +594,7 @@ func (m *ClientHelloMsg) unmarshal(data []byte) bool {
 	return true
 }
 
-type ServerHelloMsg struct {
+type serverHelloMsg struct {
 	raw                          []byte
 	vers                         uint16
 	random                       []byte
@@ -618,7 +618,7 @@ type ServerHelloMsg struct {
 	selectedGroup CurveID
 }
 
-func (m *ServerHelloMsg) marshal() []byte {
+func (m *serverHelloMsg) marshal() []byte {
 	if m.raw != nil {
 		return m.raw
 	}
@@ -734,8 +734,8 @@ func (m *ServerHelloMsg) marshal() []byte {
 	return m.raw
 }
 
-func (m *ServerHelloMsg) unmarshal(data []byte) bool {
-	*m = ServerHelloMsg{raw: data}
+func (m *serverHelloMsg) unmarshal(data []byte) bool {
+	*m = serverHelloMsg{raw: data}
 	s := cryptobyte.String(data)
 
 	if !s.Skip(4) || // message type and uint24 length field
