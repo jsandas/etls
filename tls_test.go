@@ -1441,6 +1441,8 @@ func TestCipherSuites(t *testing.T) {
 		t.Errorf("unexpected fallback CipherSuiteName: got %q, expected 0x0ABC", got)
 	}
 
+	// change length to 22 to match original cipherSuites length
+	// if len(cipherSuitesPreferenceOrder) != len(cipherSuites) {
 	if len(cipherSuitesPreferenceOrder) != 22 {
 		t.Errorf("cipherSuitesPreferenceOrder is not the same size as cipherSuites")
 	}

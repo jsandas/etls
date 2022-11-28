@@ -724,7 +724,6 @@ func cipherRC4(key, iv []byte, isRead bool) any {
 }
 
 func cipher3DES(key, iv []byte, isRead bool) any {
-
 	block, _ := des.NewTripleDESCipher(key)
 	if isRead {
 		return cipher.NewCBCDecrypter(block, iv)
