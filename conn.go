@@ -1038,9 +1038,9 @@ func (c *Conn) readHandshake() (any, error) {
 	case typeHelloRequest:
 		m = new(helloRequestMsg)
 	case typeClientHello:
-		m = new(ClientHelloMsg)
+		m = new(clientHelloMsg)
 	case typeServerHello:
-		m = new(ServerHelloMsg)
+		m = new(serverHelloMsg)
 	case typeNewSessionTicket:
 		if c.vers == VersionTLS13 {
 			m = new(newSessionTicketMsgTLS13)

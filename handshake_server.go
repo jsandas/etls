@@ -25,8 +25,8 @@ import (
 type serverHandshakeState struct {
 	c            *Conn
 	ctx          context.Context
-	clientHello  *ClientHelloMsg
-	hello        *ServerHelloMsg
+	clientHello  *clientHelloMsg
+	hello        *serverHelloMsg
 	suite        *cipherSuite
 	ecdheOk      bool
 	ecSignOk     bool
@@ -128,12 +128,12 @@ func (hs *serverHandshakeState) handshake() error {
 }
 
 // readClientHello reads a ClientHello message and selects the protocol version.
-func (c *Conn) readClientHello(ctx context.Context) (*ClientHelloMsg, error) {
+func (c *Conn) readClientHello(ctx context.Context) (*clientHelloMsg, error) {
 	msg, err := c.readHandshake()
 	if err != nil {
 		return nil, err
 	}
-	clientHello, ok := msg.(*ClientHelloMsg)
+	clientHello, ok := msg.(*clientHelloMsg)
 	if !ok {
 		c.sendAlert(alertUnexpectedMessage)
 		return nil, unexpectedMessageError(clientHello, msg)
@@ -171,7 +171,7 @@ func (c *Conn) readClientHello(ctx context.Context) (*ClientHelloMsg, error) {
 func (hs *serverHandshakeState) processClientHello() error {
 	c := hs.c
 
-	hs.hello = new(ServerHelloMsg)
+	hs.hello = new(serverHelloMsg)
 	hs.hello.vers = c.vers
 
 	foundCompression := false
@@ -861,7 +861,7 @@ func (c *Conn) processCertsFromClient(certificate Certificate) error {
 	return nil
 }
 
-func clientHelloInfo(ctx context.Context, c *Conn, clientHello *ClientHelloMsg) *ClientHelloInfo {
+func clientHelloInfo(ctx context.Context, c *Conn, clientHello *clientHelloMsg) *ClientHelloInfo {
 	supportedVersions := clientHello.supportedVersions
 	if len(clientHello.supportedVersions) == 0 {
 		supportedVersions = supportedVersionsFromMax(clientHello.vers)

@@ -26,8 +26,8 @@ import (
 type clientHandshakeState struct {
 	c            *Conn
 	ctx          context.Context
-	serverHello  *ServerHelloMsg
-	hello        *ClientHelloMsg
+	serverHello  *serverHelloMsg
+	hello        *clientHelloMsg
 	suite        *cipherSuite
 	finishedHash finishedHash
 	masterSecret []byte
@@ -36,7 +36,7 @@ type clientHandshakeState struct {
 
 var testingOnlyForceClientHelloSignatureAlgorithms []SignatureScheme
 
-func (c *Conn) makeFakeClientHello() (*ClientHelloMsg, ecdheParameters, error) {
+func (c *Conn) makeFakeClientHello() (*clientHelloMsg, ecdheParameters, error) {
 	config := c.config
 	if len(config.ServerName) == 0 && !config.InsecureSkipVerify {
 		return nil, nil, errors.New("tls: either ServerName or InsecureSkipVerify must be specified in the tls.Config")
@@ -67,7 +67,7 @@ func (c *Conn) makeFakeClientHello() (*ClientHelloMsg, ecdheParameters, error) {
 		clientHelloVersion = VersionTLS12
 	}
 
-	hello := &ClientHelloMsg{
+	hello := &clientHelloMsg{
 		vers:                         clientHelloVersion,
 		compressionMethods:           []uint8{compressionNone},
 		random:                       make([]byte, 32),
@@ -147,7 +147,7 @@ func (c *Conn) makeFakeClientHello() (*ClientHelloMsg, ecdheParameters, error) {
 	return hello, params, nil
 }
 
-func (c *Conn) makeClientHello() (*ClientHelloMsg, ecdheParameters, error) {
+func (c *Conn) makeClientHello() (*clientHelloMsg, ecdheParameters, error) {
 	config := c.config
 	if len(config.ServerName) == 0 && !config.InsecureSkipVerify {
 		return nil, nil, errors.New("tls: either ServerName or InsecureSkipVerify must be specified in the tls.Config")
@@ -178,7 +178,7 @@ func (c *Conn) makeClientHello() (*ClientHelloMsg, ecdheParameters, error) {
 		clientHelloVersion = VersionTLS12
 	}
 
-	hello := &ClientHelloMsg{
+	hello := &clientHelloMsg{
 		vers:                         clientHelloVersion,
 		compressionMethods:           []uint8{compressionNone},
 		random:                       make([]byte, 32),
@@ -297,7 +297,7 @@ func (c *Conn) clientHandshake(ctx context.Context) (err error) {
 		return err
 	}
 
-	serverHello, ok := msg.(*ServerHelloMsg)
+	serverHello, ok := msg.(*serverHelloMsg)
 	if !ok {
 		c.sendAlert(alertUnexpectedMessage)
 		return unexpectedMessageError(serverHello, msg)
@@ -395,7 +395,7 @@ func (c *Conn) fakeClientHandshake(ctx context.Context) (err error) {
 		return err
 	}
 
-	serverHello, ok := msg.(*ServerHelloMsg)
+	serverHello, ok := msg.(*serverHelloMsg)
 	if !ok {
 		c.sendAlert(alertUnexpectedMessage)
 		return unexpectedMessageError(serverHello, msg)
@@ -454,7 +454,7 @@ func (c *Conn) fakeClientHandshake(ctx context.Context) (err error) {
 	return nil
 }
 
-func (c *Conn) loadSession(hello *ClientHelloMsg) (cacheKey string,
+func (c *Conn) loadSession(hello *clientHelloMsg) (cacheKey string,
 	session *ClientSessionState, earlySecret, binderKey []byte) {
 	if c.config.SessionTicketsDisabled || c.config.ClientSessionCache == nil {
 		return "", nil, nil, nil
@@ -570,7 +570,7 @@ func (c *Conn) loadSession(hello *ClientHelloMsg) (cacheKey string,
 	return
 }
 
-func (c *Conn) pickTLSVersion(serverHello *ServerHelloMsg) error {
+func (c *Conn) pickTLSVersion(serverHello *serverHelloMsg) error {
 	peerVersion := serverHello.vers
 	if serverHello.supportedVersion != 0 {
 		peerVersion = serverHello.supportedVersion
@@ -590,7 +590,7 @@ func (c *Conn) pickTLSVersion(serverHello *ServerHelloMsg) error {
 	return nil
 }
 
-func (c *Conn) fakePickTLSVersion(serverHello *ServerHelloMsg) error {
+func (c *Conn) fakePickTLSVersion(serverHello *serverHelloMsg) error {
 	peerVersion := serverHello.vers
 	if serverHello.supportedVersion != 0 {
 		peerVersion = serverHello.supportedVersion

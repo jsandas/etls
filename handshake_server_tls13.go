@@ -26,8 +26,8 @@ const maxClientPSKIdentities = 5
 type serverHandshakeStateTLS13 struct {
 	c               *Conn
 	ctx             context.Context
-	clientHello     *ClientHelloMsg
-	hello           *ServerHelloMsg
+	clientHello     *clientHelloMsg
+	hello           *serverHelloMsg
 	sentDummyCCS    bool
 	usingPSK        bool
 	suite           *cipherSuiteTLS13
@@ -90,7 +90,7 @@ func (hs *serverHandshakeStateTLS13) handshake() error {
 func (hs *serverHandshakeStateTLS13) processClientHello() error {
 	c := hs.c
 
-	hs.hello = new(ServerHelloMsg)
+	hs.hello = new(serverHelloMsg)
 
 	// TLS 1.3 froze the ServerHello.legacy_version field, and uses
 	// supported_versions instead. See RFC 8446, sections 4.1.3 and 4.2.1.
@@ -408,7 +408,7 @@ func (hs *serverHandshakeStateTLS13) doHelloRetryRequest(selectedGroup CurveID) 
 	hs.transcript.Write([]byte{typeMessageHash, 0, 0, uint8(len(chHash))})
 	hs.transcript.Write(chHash)
 
-	helloRetryRequest := &ServerHelloMsg{
+	helloRetryRequest := &serverHelloMsg{
 		vers:              hs.hello.vers,
 		random:            helloRetryRequestRandom,
 		sessionId:         hs.hello.sessionId,
@@ -432,7 +432,7 @@ func (hs *serverHandshakeStateTLS13) doHelloRetryRequest(selectedGroup CurveID) 
 		return err
 	}
 
-	clientHello, ok := msg.(*ClientHelloMsg)
+	clientHello, ok := msg.(*clientHelloMsg)
 	if !ok {
 		c.sendAlert(alertUnexpectedMessage)
 		return unexpectedMessageError(clientHello, msg)
@@ -460,7 +460,7 @@ func (hs *serverHandshakeStateTLS13) doHelloRetryRequest(selectedGroup CurveID) 
 // illegalClientHelloChange reports whether the two ClientHello messages are
 // different, with the exception of the changes allowed before and after a
 // HelloRetryRequest. See RFC 8446, Section 4.1.2.
-func illegalClientHelloChange(ch, ch1 *ClientHelloMsg) bool {
+func illegalClientHelloChange(ch, ch1 *clientHelloMsg) bool {
 	if len(ch.supportedVersions) != len(ch1.supportedVersions) ||
 		len(ch.cipherSuites) != len(ch1.cipherSuites) ||
 		len(ch.supportedCurves) != len(ch1.supportedCurves) ||

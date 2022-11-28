@@ -16,8 +16,8 @@ import (
 )
 
 var tests = []any{
-	&ClientHelloMsg{},
-	&ServerHelloMsg{},
+	&clientHelloMsg{},
+	&serverHelloMsg{},
 	&finishedMsg{},
 
 	&certificateMsg{},
@@ -113,8 +113,8 @@ func randomString(n int, rand *rand.Rand) string {
 	return string(b)
 }
 
-func (*ClientHelloMsg) Generate(rand *rand.Rand, size int) reflect.Value {
-	m := &ClientHelloMsg{}
+func (*clientHelloMsg) Generate(rand *rand.Rand, size int) reflect.Value {
+	m := &clientHelloMsg{}
 	m.vers = uint16(rand.Intn(65536))
 	m.random = randomBytes(32, rand)
 	m.sessionId = randomBytes(rand.Intn(32), rand)
@@ -195,8 +195,8 @@ func (*ClientHelloMsg) Generate(rand *rand.Rand, size int) reflect.Value {
 	return reflect.ValueOf(m)
 }
 
-func (*ServerHelloMsg) Generate(rand *rand.Rand, size int) reflect.Value {
-	m := &ServerHelloMsg{}
+func (*serverHelloMsg) Generate(rand *rand.Rand, size int) reflect.Value {
+	m := &serverHelloMsg{}
 	m.vers = uint16(rand.Intn(65536))
 	m.random = randomBytes(32, rand)
 	m.sessionId = randomBytes(rand.Intn(32), rand)
@@ -409,14 +409,14 @@ func TestRejectEmptySCTList(t *testing.T) {
 
 	var random [32]byte
 	sct := []byte{0x42, 0x42, 0x42, 0x42}
-	serverHello := ServerHelloMsg{
+	serverHello := serverHelloMsg{
 		vers:   VersionTLS12,
 		random: random[:],
 		scts:   [][]byte{sct},
 	}
 	serverHelloBytes := serverHello.marshal()
 
-	var serverHelloCopy ServerHelloMsg
+	var serverHelloCopy serverHelloMsg
 	if !serverHelloCopy.unmarshal(serverHelloBytes) {
 		t.Fatal("Failed to unmarshal initial message")
 	}
@@ -452,14 +452,14 @@ func TestRejectEmptySCT(t *testing.T) {
 	// not be zero length.
 
 	var random [32]byte
-	serverHello := ServerHelloMsg{
+	serverHello := serverHelloMsg{
 		vers:   VersionTLS12,
 		random: random[:],
 		scts:   [][]byte{nil},
 	}
 	serverHelloBytes := serverHello.marshal()
 
-	var serverHelloCopy ServerHelloMsg
+	var serverHelloCopy serverHelloMsg
 	if serverHelloCopy.unmarshal(serverHelloBytes) {
 		t.Fatal("Unmarshaled ServerHello with zero-length SCT")
 	}
@@ -470,7 +470,7 @@ func TestRejectDuplicateExtensions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to decode test ClientHello: %s", err)
 	}
-	var clientHelloCopy ClientHelloMsg
+	var clientHelloCopy clientHelloMsg
 	if clientHelloCopy.unmarshal(clientHelloBytes) {
 		t.Error("Unmarshaled ClientHello with duplicate extensions")
 	}
@@ -479,7 +479,7 @@ func TestRejectDuplicateExtensions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to decode test ServerHello: %s", err)
 	}
-	var serverHelloCopy ServerHelloMsg
+	var serverHelloCopy serverHelloMsg
 	if serverHelloCopy.unmarshal(serverHelloBytes) {
 		t.Fatal("Unmarshaled ServerHello with duplicate extensions")
 	}
