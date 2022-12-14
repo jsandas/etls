@@ -1046,7 +1046,7 @@ func (c *Config) maxSupportedVersion(isClient bool) uint16 {
 }
 
 // fakeMaxSupportedVersion duplicates maxSupportedVersion method except
-// it relies on the  fakeSupportedVersions method to allow SSL3
+// it relies on the fakeSupportedVersions method to allow SSL3
 // This should only be used for testing server protocol support
 func (c *Config) fakeMaxSupportedVersion(isClient bool) uint16 {
 	supportedVersions := c.fakeSupportedVersions(isClient)
