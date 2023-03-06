@@ -4,5 +4,6 @@ unit:
 	go test -count=1 ./... -coverprofile=coverage.out -covermode=atomic
 
 unit_docker:
-	docker run -v ${PWD}:/go/src/etl -w /go/src/etl --pull --rm golang:${GOLANG_VERSION} \
+	docker pull golang:${GOLANG_VERSION}-bullseye
+	docker run -v ${PWD}:/go/src/etl -w /go/src/etl --rm golang:${GOLANG_VERSION}-bullseye \
 	bash -c "go test -count=1 ./... -coverprofile=coverage.out -covermode=atomic"
