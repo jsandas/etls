@@ -54,12 +54,12 @@ func (c *Conn) makeFakeClientHello() (*clientHelloMsg, ecdheParameters, error) {
 		return nil, nil, errors.New("tls: NextProtos values too large")
 	}
 
-	supportedVersions := config.fakeSupportedVersions(roleClient)
+	supportedVersions := config.supportedVersions(roleClient)
 	if len(supportedVersions) == 0 {
 		return nil, nil, errors.New("tls: no supported versions satisfy MinVersion and MaxVersion")
 	}
 
-	clientHelloVersion := config.fakeMaxSupportedVersion(roleClient)
+	clientHelloVersion := config.maxSupportedVersion(roleClient)
 	// The version at the beginning of the ClientHello was capped at TLS 1.2
 	// for compatibility reasons. The supported_versions extension is used
 	// to negotiate versions now. See RFC 8446, Section 4.2.1.
@@ -416,7 +416,7 @@ func (c *Conn) fakeClientHandshake(ctx context.Context) (err error) {
 	// If we are negotiating a protocol version that's lower than what we
 	// support, check for the server downgrade canaries.
 	// See RFC 8446, Section 4.1.3.
-	maxVers := c.config.fakeMaxSupportedVersion(roleClient)
+	maxVers := c.config.maxSupportedVersion(roleClient)
 	tls12Downgrade := string(serverHello.random[24:]) == downgradeCanaryTLS12
 	tls11Downgrade := string(serverHello.random[24:]) == downgradeCanaryTLS11
 	if maxVers == VersionTLS13 && c.vers <= VersionTLS12 && (tls12Downgrade || tls11Downgrade) ||
@@ -610,7 +610,7 @@ func (c *Conn) fakePickTLSVersion(serverHello *serverHelloMsg) error {
 		peerVersion = serverHello.supportedVersion
 	}
 
-	vers, ok := c.config.fakeMutualVersion(roleClient, []uint16{peerVersion})
+	vers, ok := c.config.mutualVersion(roleClient, []uint16{peerVersion})
 	if !ok {
 		c.sendAlert(alertProtocolVersion)
 		return fmt.Errorf("tls: server selected unsupported protocol version %x", peerVersion)
